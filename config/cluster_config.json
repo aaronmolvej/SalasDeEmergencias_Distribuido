@@ -1,0 +1,29 @@
+{
+    "initial_master_id": 1,
+    "nodes": [
+        {
+            "id": 1,
+            "host": "127.0.0.1", 
+            "port_db": 9001,
+            "port_manager": 8001
+        },
+        {
+            "id": 2,
+            "host": "127.0.0.1",
+            "port_db": 9002,
+            "port_manager": 8002
+        },
+        {
+            "id": 3,
+            "host": "127.0.0.1",
+            "port_db": 9003,
+            "port_manager": 8003
+        },
+        {
+            "id": 4,
+            "host": "127.0.0.1",
+            "port_db": 9004,
+            "port_manager": 8004
+        }
+    ]
+}
