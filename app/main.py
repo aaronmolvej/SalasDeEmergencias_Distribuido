@@ -8,6 +8,8 @@ import threading
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app.services.storage_service import StorageService
+from app.services.master_service import start_master_listener
+
 # from app.services.master_service import MasterService (Aún no creado)
 
 CONFIG_PATH = "config/cluster_config.json"
@@ -46,10 +48,17 @@ def main(node_id):
     initial_master = config['initial_master_id']
     
     if node_id == initial_master:
-        print(f"Soy el NODO MAESTRO (ID: {node_id})")
-        print(f"   TODO: Iniciar MasterService en puerto {my_info['port_manager']}")
-        # master = MasterService(...)
-        # master.start()
+    print(f"Soy el NODO MAESTRO (ID: {node_id})")
+
+    print(f"[MASTER] Iniciando servicio maestro en puerto {my_info['port_manager']}...")
+
+    # Iniciar el servidor maestro en un hilo separado
+    master_thread = threading.Thread(
+        target=start_master_listener,
+        daemon=True
+    )
+    master_thread.start()
+
     else:
         print(f"Soy un NODO ESCLAVO (ID: {node_id})")
         print(f"   Esperando órdenes del Maestro {initial_master}...")
