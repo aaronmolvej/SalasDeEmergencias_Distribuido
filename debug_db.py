@@ -2,7 +2,7 @@ import sqlite3
 import os
 
 # Ruta exacta donde esperamos que esté la BD del Nodo 2
-DB_PATH = "data/nodo_2.db"
+DB_PATH = "data/nodo_3.db"
 
 print(f"--- DIAGNÓSTICO DE BASE DE DATOS: {DB_PATH} ---")
 

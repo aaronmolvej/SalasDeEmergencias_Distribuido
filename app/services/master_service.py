@@ -56,24 +56,32 @@ def handle_request(conn):
         response = {"status": MSG_ERROR, "msg": "Petición no reconocida"}
 
         # REGISTRAR PACIENTE 
+        # ... dentro de handle_request ...
+
+        # REGISTRAR PACIENTE
         if req_type == "REGISTER_PATIENT":
-            sql = "INSERT INTO pacientes (nombre, seguro_social) VALUES (?, ?)"
-            params = (request["nombre"], request["seguro"])
+            sql_local = "INSERT INTO pacientes (nombre, seguro_social) VALUES (?, ?)"
+            params_local = (request["nombre"], request["seguro"])
             
-            # Escritura Local
-            res_db = db.ejecutar_escritura(sql, params)
+            res_db = db.ejecutar_escritura(sql_local, params_local)
             
             if res_db["status"] == "OK":
-                # Replicación
+                id_generado = res_db["id"] 
+                
+                print(f"[MASTER] Paciente registrado localmente con ID: {id_generado}")
+                sql_replica = "INSERT INTO pacientes (id_paciente, nombre, seguro_social) VALUES (?, ?, ?)"
+                params_replica = (id_generado, request["nombre"], request["seguro"])
+
+                # Replicar a los esclavos con el ID explícito
                 broadcast_to_slaves({
                     "type": "WRITE",
-                    "sql": sql,
-                    "params": params
+                    "sql": sql_replica,
+                    "params": params_replica
                 })
-                response = {"status": MSG_OK, "id": res_db["id"], "msg": "Paciente registrado"}
+                
+                response = {"status": MSG_OK, "id": id_generado, "msg": "Paciente registrado"}
             else:
                 response = {"status": MSG_ERROR, "msg": res_db.get("error")}
-
         # NUEVA VISITA 
         elif req_type == MSG_NEW_VISIT:
             seguro = request.get("seguro")
@@ -124,11 +132,11 @@ def create_visit_transaction(id_paciente):
         
         # Buscar Doctor Disponible
         sql_doc = f"SELECT id_doctor FROM doctores WHERE estado = '{DOC_DISPONIBLE}' LIMIT 1"
-        res_doc = db.ejecutar_lectura(sql_doc)
+        res_doc = db.ejecutar_lectura(sql_doc, [])
         
         # Buscar Cama Disponible
         sql_cama = f"SELECT id_cama FROM camas WHERE estado = '{CAMA_LIBRE}' LIMIT 1"
-        res_cama = db.ejecutar_lectura(sql_cama)
+        res_cama = db.ejecutar_lectura(sql_cama, [])
 
         # Validación de Disponibilidad
         if (res_doc["status"] != "OK" or not res_doc["data"]) or \
