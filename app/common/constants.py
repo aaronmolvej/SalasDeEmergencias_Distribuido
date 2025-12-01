@@ -1,8 +1,8 @@
 # Tipos de Mensajes
 MSG_LOGIN = "LOGIN"
-MSG_NEW_VISIT = "NEW_VISIT"       # Solicitud de Trabajador Social -> Maestro
-MSG_REPLICATE_INSERT = "REP_INS"  # Orden del Maestro -> Esclavos
-MSG_QUERY = "QUERY"               # Consulta local
+MSG_NEW_VISIT = "NEW_VISIT"       
+MSG_REPLICATE_INSERT = "REP_INS"  
+MSG_QUERY = "QUERY"               
 MSG_OK = "OK"
 MSG_ERROR = "ERROR"
 

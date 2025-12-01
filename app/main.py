@@ -1,80 +1,93 @@
 import sys
 import os
-import json
 import time
 import threading
 
-# Ajuste de path para que funcione desde la carpeta raíz
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app.services.storage_service import StorageService
 from app.services.master_service import start_master_listener
+from app.core.detector_failure import DetectorFallas
+from app.data_access.db_manager import set_db_context, DatabaseManager 
+from app.common.config_loader import load_cluster_config
 
-# from app.services.master_service import MasterService (Aún no creado)
+DB_DIR = "data"
+SCHEMA_PATH = "config/schema.sql"
 
-CONFIG_PATH = "config/cluster_config.json"
+def preparar_topologia_detector(config):
+    mapa_nodos = {}
+    for node in config["nodes"]:
+        puerto_detector = node["port_manager"] + 100 
+        mapa_nodos[str(node["id"])] = (node["host"], puerto_detector)
+    return mapa_nodos
 
-def cargar_config():
-    if not os.path.exists(CONFIG_PATH):
-        raise Exception(f"No se encontró {CONFIG_PATH}")
-    with open(CONFIG_PATH) as f:
-        return json.load(f)
-
-def obtener_info_nodo(node_id, config):
-    """Busca la IP y puertos de este nodo en el JSON"""
-    for node in config['nodes']:
-        if node['id'] == node_id:
-            return node
-    raise Exception(f"Nodo con ID {node_id} no encontrado en configuración")
+def callback_fallo_detectado(id_nodo):
+    print(f"\n[ALERTA] Nodo {id_nodo} ha caído.")
 
 def main(node_id):
-    print(f"--- INICIANDO NODO {node_id} ---")
-    config = cargar_config()
-    my_info = obtener_info_nodo(node_id, config)
+    print(f"\n===INICIANDO NODO HOSPITALARIO {node_id} ===\n")
     
-    # Iniciar Servicio de Almacenamiento (Base de Datos)
-    # Esto crea/conecta a data/nodo_1.db, nodo_2.db, etc.
-    db_file = f"data/nodo_{node_id}.db"
-    storage = StorageService(db_file, my_info['port_db'])
+    config = load_cluster_config()
     
-    # Corremos el storage en un hilo daemon para que no bloquee el main
-    storage_thread = threading.Thread(target=storage.start, daemon=True)
-    storage_thread.start()
+    # Buscar mi configuración
+    mi_info = next((n for n in config["nodes"] if n["id"] == node_id), None)
+    if not mi_info:
+        print(f"Error: ID {node_id} no encontrado en config.")
+        return
 
-    # Esperamos un poco para asegurar que el storage subió
-    time.sleep(1)
+    master_id_actual = config["initial_master_id"]
+    soy_maestro = (node_id == master_id_actual)
+    ruta_db = os.path.join(DB_DIR, f"nodo_{node_id}.db")
 
-    # Lógica de Roles (Maestro vs Esclavo)
-    initial_master = config['initial_master_id']
+    # CONFIGURAR CONTEXTO GLOBAL DE BD
+    # permite que master_service y replication_service sepan dónde escribir
+    set_db_context(ruta_db)
     
-    if node_id == initial_master:
-    print(f"Soy el NODO MAESTRO (ID: {node_id})")
+    # Inicializar esquema si es la primera vez
+    if not os.path.exists(ruta_db):
+        DatabaseManager(ruta_db, SCHEMA_PATH)
 
-    print(f"[MASTER] Iniciando servicio maestro en puerto {my_info['port_manager']}...")
-
-    # Iniciar el servidor maestro en un hilo separado
-    master_thread = threading.Thread(
-        target=start_master_listener,
-        daemon=True
+    # INICIAR SERVICIOS
+    
+    # A) Storage Service 
+    servicio_storage = StorageService(ruta_db, mi_info["port_db"], mi_info["host"])
+    t_storage = threading.Thread(target=servicio_storage.start, daemon=True)
+    t_storage.start()
+    
+    # B) Detector failure
+    mapa_nodos = preparar_topologia_detector(config)
+    mi_puerto_detector = mi_info["port_manager"] + 100
+    detector = DetectorFallas(
+        id_nodo=str(node_id),
+        host=mi_info["host"],
+        puerto=mi_puerto_detector,
+        nodos_cluster=mapa_nodos,
+        es_maestro=soy_maestro,
+        id_maestro=str(master_id_actual),
+        al_detectar_fallo=callback_fallo_detectado
     )
-    master_thread.start()
+    detector.iniciar()
 
+    # 3. ROL DE MAESTRO
+    if soy_maestro:
+        print(f"\nNODO MAESTRO ACTIVO")
+        t_maestro = threading.Thread(
+            target=start_master_listener, 
+            args=(mi_info['port_manager'],), 
+            daemon=True
+        )
+        t_maestro.start()
     else:
-        print(f"Soy un NODO ESCLAVO (ID: {node_id})")
-        print(f"   Esperando órdenes del Maestro {initial_master}...")
+        print(f"\nNODO ESCLAVO ACTIVO")
 
-    # Mantener el programa vivo
     try:
-        while True:
-            time.sleep(1)
+        while True: time.sleep(1)
     except KeyboardInterrupt:
-        print("\nApagando nodo...")
+        print("Apagando...")
+        detector.detener()
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Uso: python -m app.main <node_id>")
+        print("Uso: python -m app.main <ID>")
         sys.exit(1)
-    
-    # python -m app.main 1
-    id_nodo = int(sys.argv[1])
-    main(id_nodo)
+    main(int(sys.argv[1]))

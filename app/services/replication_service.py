@@ -5,13 +5,14 @@ import time
 import os
 
 from app.data_access.db_manager import execute_sql
-from config.cluster_config import load_cluster_config
+from app.common.config_loader import load_cluster_config
+from app.common.protocol import send_json as protocol_send_json, recv_json
 
 
 #   CONFIGURACIÓN GENERAL
-REPLICATION_PORT = 9001      # Puerto donde los esclavos escuchan
-REPLICATION_TIMEOUT = 3      # Tiempo máximo para esperar respuesta
-REPLICATION_RETRIES = 2      # Reintentos si un nodo no responde
+REPLICATION_PORT = 9001      
+REPLICATION_TIMEOUT = 3      
+REPLICATION_RETRIES = 2     
 BUFFER_SIZE = 4096
 
 
@@ -37,59 +38,47 @@ def send_json(ip, port, data):
 
 
 
-#   FUNCION 1: BROADCAST DESDE EL MAESTRO
+#   BROADCAST DESDE EL MAESTRO
 def broadcast_to_slaves(operation_json):
     """
-    Envía una operación SQL a todos los esclavos.
-    
-    operation_json debe seguir esta estructura:
-
-    {
-        "type": "REPLICATION",
-        "action": "INSERT | UPDATE | DELETE",
-        "table": "VISITAS",
-        "sql": "INSERT INTO VISITAS (...) VALUES (...)",
-        "params": [ ... ]
-    }
+    Envía una operación SQL a todos los nodos (excepto al propio maestro idealmente).
     """
-
-    print("\n[REPLICATION] Enviando operación a esclavos...")
-    print("[REPLICATION] Operación:", operation_json)
+    print(f"[REPLICATION] Difundiendo: {operation_json.get('sql')[:30]}...")
 
     config = load_cluster_config()
-    my_ip = config["self"]["ip"]
     nodes = config["nodes"]
-
+    
     results = {}
 
     for node in nodes:
-        if node["ip"] == my_ip:
-            continue  # No replicar a sí mismo
+        target_ip = node["host"]
+        target_port = node["port_db"] 
+        
+        node_id = f"{target_ip}:{target_port}"
 
-        ip = node["ip"]
-        print(f"[REPLICATION] -> Enviando a nodo {ip}:{REPLICATION_PORT}")
-
-        attempts = 0
         success = False
+        for attempt in range(REPLICATION_RETRIES):
+            try:
+                with socket.create_connection((target_ip, target_port), timeout=REPLICATION_TIMEOUT) as sock:
 
-        while attempts < REPLICATION_RETRIES:
-            resp = send_json(ip, REPLICATION_PORT, operation_json)
+                    protocol_send_json(sock, operation_json)
+                    
+                    response = recv_json(sock)
+                    
+                    if response and response.get("status") == "OK":
+                        print(f" Réplica exitosa en Nodo {node['id']}")
+                        success = True
+                        break 
+                    else:
+                         print(f"Respuesta inesperada de Nodo {node['id']}: {response}")
 
-            if resp and resp.get("status") == "OK":
-                print(f"[REPLICATION] ✓ Nodo {ip} replicó correctamente.")
-                results[ip] = True
-                success = True
-                break
-            else:
-                print(f"[REPLICATION] × Falló intento {attempts+1} con {ip}.")
-                attempts += 1
-                time.sleep(1)
+            except ConnectionRefusedError:
+                pass
+            except Exception as e:
+                print(f"Error replicando a {node_id}: {e}")
+                
+        results[node['id']] = success
 
-        if not success:
-            print(f"[REPLICATION] ❗ Nodo {ip} NO replicó.")
-            results[ip] = False
-
-    print("[REPLICATION] Resultados:", results)
     return results
 
 
