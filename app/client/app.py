@@ -44,7 +44,7 @@ def ingresar_visita():
     else:
         print(f"Error: {resp.get('msg') if resp else 'Error de conexión'}")
 
-# --- VISTA DETALLADA DE CAMAS ---
+# VISTA DETALLADA DE CAMAS
 def ver_disponibilidad():
     print("\nDisponibilidad del Hospital")
     resp = send_to_master({"type": "CHECK_AVAIL"})
@@ -66,7 +66,7 @@ def ver_disponibilidad():
     else:
         print("Error obteniendo disponibilidad.")
 
-# --- VISTA DE DOCTOR (LISTA + SELECCIÓN) ---
+# VISTA DE DOCTOR 
 def cerrar_visita():
     print("\n--- 🩺 Alta Médica / Cerrar Visita ---")
     resp = send_to_master({"type": "GET_ACTIVE_VISITS"})
@@ -77,7 +77,6 @@ def cerrar_visita():
             print("No hay pacientes en atención actualmente.")
             return
 
-        # MODIFICADO: Agregar columna DOCTOR
         print("\nPACIENTES EN ATENCIÓN:")
         print(f"{'FOLIO':<18} | {'PACIENTE':<15} | {'DOCTOR':<15} | {'SALA':<10} | {'INGRESO'}")
         print("-" * 80)
@@ -116,7 +115,6 @@ def ver_reportes():
                 print(f"\n{'ID':<5} | {'NOMBRE':<20} | {'SEGURO SOCIAL'}")
                 print("-" * 45)
                 for p in resp['pacientes']:
-                    # Manejo seguro de datos
                     pid = str(p.get('id_paciente', ''))
                     nom = str(p.get('nombre', ''))
                     ss = str(p.get('seguro_social', ''))

@@ -11,13 +11,12 @@ class StorageService:
         self.db_path = db_path
         self.running = False
         
-        # Instanciamos el gestor de BD (esto crea tablas si no existen)
+        # Instanciamos el gestor de BD 
         self.db = DatabaseManager(db_path, "config/schema.sql")
 
     def start(self):
         self.running = True
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # SO_REUSEADDR evita el error "Address already in use" al reiniciar rápido
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         
         try:
@@ -65,8 +64,6 @@ class StorageService:
         params = tuple(request.get("params", []))
 
         if req_type == "WRITE":
-            # Usado para INSERT, UPDATE, DELETE
-            # Esto será llamado tanto por operaciones locales como por REPLICACIÓN del maestro
             return self.db.ejecutar_escritura(sql, params)
         
         elif req_type == "READ":

@@ -40,9 +40,6 @@ def send_json(ip, port, data):
 
 #   BROADCAST DESDE EL MAESTRO
 def broadcast_to_slaves(operation_json, sender_id=None):
-    """
-    Envía una operación SQL a todos los nodos (excepto al propio maestro idealmente).
-    """
     print(f"[REPLICATION] Difundiendo: {operation_json.get('sql')[:30]}...")
 
     config = load_cluster_config()
@@ -82,9 +79,6 @@ def broadcast_to_slaves(operation_json, sender_id=None):
         results[node['id']] = success
 
     return results
-
-
-
 
 #   FUNCION 2: LISTENER DEL ESCLAVO
 

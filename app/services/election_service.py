@@ -13,9 +13,8 @@ class ElectionService:
         self.my_info = next(n for n in self.config["nodes"] if n["id"] == my_id)
         self.port = self.my_info["port_db"] + 100 # Puerto 910X
         
-        # Callbacks para avisar al main.py
-        self.on_promotion = on_promotion_callback     # "Me convertí en Maestro"
-        self.on_new_master = on_new_master_callback   # "Otro es el Maestro"
+        self.on_promotion = on_promotion_callback    
+        self.on_new_master = on_new_master_callback   
         
         self.running = True
         self.election_in_progress = False
@@ -51,7 +50,7 @@ class ElectionService:
                     self.start_election() # Yo tomo el relevo
             
             elif msg_type == MSG_COORDINATOR:
-                print(f"[Elección] ¡Nuevo Líder! Es el Nodo {sender_id}")
+                print(f"[Elección] Nuevo Líder Es el Nodo {sender_id}")
                 self.election_in_progress = False
                 self.on_new_master(sender_id)
 
@@ -77,7 +76,7 @@ class ElectionService:
                 # Puerto de elección = port_db + 100
                 target_port = node["port_db"] + 100
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(1.0) # Timeout corto para detectar caídas rápido
+                sock.settimeout(1.0) 
                 sock.connect((node["host"], target_port))
                 
                 send_json(sock, {"type": MSG_ELECTION, "sender_id": self.my_id})
@@ -97,7 +96,7 @@ class ElectionService:
         print("[Elección] Ahora soy el nodo maestro")
         self.election_in_progress = False
         
-        # 1. Avisar a todos los nodos (menores)
+        # Avisar a todos los nodos (menores)
         lower_nodes = [n for n in self.config["nodes"] if n["id"] != self.my_id]
         for node in lower_nodes:
             try:

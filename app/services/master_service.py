@@ -43,7 +43,6 @@ def handle_request(conn):
         response = {"status": MSG_ERROR, "msg": "Petición no reconocida"}
 
         if req_type == "REGISTER_PATIENT":
-            # ... (IGUAL QUE ANTES) ...
             sql_local = "INSERT INTO pacientes (nombre, seguro_social) VALUES (?, ?)"
             params_local = (request["nombre"], request["seguro"])
             res_db = db.ejecutar_escritura(sql_local, params_local)
@@ -70,7 +69,6 @@ def handle_request(conn):
                        SUM(CASE WHEN c.estado = 'OCUPADA' THEN 1 ELSE 0 END) as ocupadas
                 FROM camas c JOIN nodos n ON c.id_sala = n.id_sala GROUP BY n.nombre
             """
-            # Doctores ahora son la suma de capacidad restante
             sql_docs = "SELECT SUM(capacidad_max - carga_actual) as cupos FROM doctores WHERE carga_actual < capacidad_max"
             
             res_camas = db.ejecutar_lectura(sql_camas, [])
@@ -80,7 +78,7 @@ def handle_request(conn):
             response = {
                 "status": MSG_OK,
                 "desglose_camas": res_camas["data"],
-                "doctores_libres": total_cupos # Ahora mostramos "Cupos de atención"
+                "doctores_libres": total_cupos 
             }
 
         elif req_type == "GET_ACTIVE_VISITS":
@@ -114,7 +112,7 @@ def create_visit_transaction(id_paciente):
     with mutex_asignacion:
         print("[MASTER] Iniciando asignación")
         
-        # 1. BUSCAR DOCTOR
+        # BUSCAR DOCTOR
         sql_doc = """
             SELECT id_doctor, carga_actual, capacidad_max 
             FROM doctores 
@@ -123,8 +121,7 @@ def create_visit_transaction(id_paciente):
         """
         res_doc = db.ejecutar_lectura(sql_doc, [])
         
-        # 2. BUSCAR CAMA Y SU SALA (### CORRECCIÓN LÓGICA ###)
-        # Ahora pedimos también el 'id_sala' de la cama encontrada
+        # BUSCAR CAMA Y SU SALA
         sql_cama = """
             SELECT id_cama, id_sala 
             FROM camas 
@@ -142,15 +139,13 @@ def create_visit_transaction(id_paciente):
         id_doctor = doctor["id_doctor"]
         id_cama = cama["id_cama"]
         
-        # ### CORRECCIÓN LÓGICA ###
-        # La visita ocurre donde está la cama, NO donde está el Maestro
         id_sala_real = cama["id_sala"] 
 
         folio = generate_folio(id_paciente, id_doctor, id_sala_real)
         fecha_actual = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         try:
-            # 3. ACTUALIZAR RECURSOS
+            # ACTUALIZAR RECURSOS
             nueva_carga = doctor["carga_actual"] + 1
             nuevo_estado = "SATURADO" if nueva_carga >= doctor["capacidad_max"] else "DISPONIBLE"
             
@@ -203,8 +198,7 @@ def close_visit_transaction(folio):
         fecha_salida = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         try:
-            # 1. Liberar Doctor (Reducir carga)
-            # Leemos carga actual primero para no dejarla negativa (seguridad)
+            # 1. Liberar Doctor 
             doc_data = db.ejecutar_lectura("SELECT carga_actual FROM doctores WHERE id_doctor=?", (id_doctor,))["data"][0]
             nueva_carga = max(0, doc_data["carga_actual"] - 1)
             

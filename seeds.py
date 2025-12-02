@@ -2,7 +2,6 @@ import sys
 import os
 import time
 
-# Ajuste de rutas para importaciones
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 
 from app.data_access.db_manager import DatabaseManager, set_db_context
@@ -16,16 +15,11 @@ SCHEMA_PATH = "config/schema.sql"
 def sembrar_datos():
     print("INICIANDO POBLADO DE DATOS (SEEDS)")
     
-    # 1. Configurar contexto para el Maestro
-    # Esto permite escribir en la BD local del nodo 1
     set_db_context(DB_MASTER_PATH)
     db = DatabaseManager(DB_MASTER_PATH, SCHEMA_PATH)
 
-    # 2. Datos a insertar
-    # (Tabla, SQL, Parámetros)
+    # Datos a insertar
     datos_semilla = [
-        # REGISTRO DE SALAS 
-        # Asegúrate que las IPs coincidan con tu cluster_config.json
         {
             "info": "Registrando Sala Norte (Nodo 1)",
             "sql": "INSERT OR IGNORE INTO nodos (id_sala, nombre, ip, puerto) VALUES (?, ?, ?, ?)",
@@ -64,7 +58,7 @@ def sembrar_datos():
             "params": ("Dr. Stephen Strange", "Neurocirugía")
         },
 
-        # 3. CAMAS
+        # CAMAS
         # Nodo 1
         {"info": "Cama A-100 (Norte)", "sql": "INSERT INTO camas (id_sala, numero_cama, estado) VALUES (?, ?, ?)", "params": (1, "A-100", "LIBRE")},
         {"info": "Cama A-101 (Norte)", "sql": "INSERT INTO camas (id_sala, numero_cama, estado) VALUES (?, ?, ?)", "params": (1, "A-101", "LIBRE")},
@@ -89,7 +83,6 @@ def sembrar_datos():
             print(" Guardado en Maestro (Nodo 1)")
             
             # B) Replicación a Esclavos
-            # Construimos el paquete WRITE tal como lo espera el StorageService
             paquete_replicacion = {
                 "type": "WRITE",
                 "sql": item['sql'],
@@ -100,11 +93,9 @@ def sembrar_datos():
         else:
             print(f"Error en Maestro: {res.get('error')}")
         
-        time.sleep(0.1) # Pequeña pausa para no saturar logs visuales
+        time.sleep(0.1) 
 
     print("\n POBLADO FINALIZADO")
 
 if __name__ == "__main__":
-    # Advertencia: Esto requiere que los Nodos Esclavos (2, 3, 4) estén encendidos
-    # para recibir la replicación.
     sembrar_datos()
