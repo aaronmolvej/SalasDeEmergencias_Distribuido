@@ -24,41 +24,58 @@ def sembrar_datos():
     # 2. Datos a insertar
     # (Tabla, SQL, Parámetros)
     datos_semilla = [
-        # --- SALAS (NODOS) ---
+        # REGISTRO DE SALAS 
+        # Asegúrate que las IPs coincidan con tu cluster_config.json
         {
-            "info": "Registrando Sala Norte",
+            "info": "Registrando Sala Norte (Nodo 1)",
             "sql": "INSERT OR IGNORE INTO nodos (id_sala, nombre, ip, puerto) VALUES (?, ?, ?, ?)",
-            "params": (1, "Sala Norte", "127.0.0.1", 9001)
+            "params": (1, "Sala Norte", "192.168.1.10", 9001)
         },
         {
-            "info": "Registrando Sala Sur",
+            "info": "Registrando Sala Sur (Nodo 2)",
             "sql": "INSERT OR IGNORE INTO nodos (id_sala, nombre, ip, puerto) VALUES (?, ?, ?, ?)",
-            "params": (2, "Sala Sur", "127.0.0.1", 9002)
+            "params": (2, "Sala Sur", "192.168.1.11", 9001)
+        },
+        {
+            "info": "Registrando Sala Este (Nodo 3)",
+            "sql": "INSERT OR IGNORE INTO nodos (id_sala, nombre, ip, puerto) VALUES (?, ?, ?, ?)",
+            "params": (3, "Sala Este", "192.168.1.12", 9001)
+        },
+        {
+            "info": "Registrando Sala Oeste (Nodo 4)",
+            "sql": "INSERT OR IGNORE INTO nodos (id_sala, nombre, ip, puerto) VALUES (?, ?, ?, ?)",
+            "params": (4, "Sala Oeste", "192.168.1.13", 9001)
         },
         
-        # --- DOCTORES ---
+        # DOCTORES 
         {
-            "info": "Contratando Dr. House",
-            "sql": "INSERT INTO doctores (nombre, especialidad, estado) VALUES (?, ?, ?)",
-            "params": ("Dr. Gregory House", "Diagnóstico", "DISPONIBLE")
+            "info": "Contratando Dr. House (Capacidad: 2)",
+            "sql": "INSERT INTO doctores (nombre, especialidad, carga_actual, capacidad_max) VALUES (?, ?, 0, 2)",
+            "params": ("Dr. Gregory House", "Diagnóstico")
         },
         {
-            "info": "Contratando Dra. Grey",
-            "sql": "INSERT INTO doctores (nombre, especialidad, estado) VALUES (?, ?, ?)",
-            "params": ("Dra. Meredith Grey", "Cirugía", "DISPONIBLE")
+            "info": "Contratando Dra. Grey (Capacidad: 3)",
+            "sql": "INSERT INTO doctores (nombre, especialidad, carga_actual, capacidad_max) VALUES (?, ?, 0, 3)",
+            "params": ("Dra. Meredith Grey", "Cirugía")
+        },
+        {
+            "info": "Contratando Dr. Strange (Capacidad: 1)",
+            "sql": "INSERT INTO doctores (nombre, especialidad, carga_actual, capacidad_max) VALUES (?, ?, 0, 1)",
+            "params": ("Dr. Stephen Strange", "Neurocirugía")
         },
 
-        # --- CAMAS ---
-        {
-            "info": "Instalando Cama A-100",
-            "sql": "INSERT INTO camas (id_sala, numero_cama, estado) VALUES (?, ?, ?)",
-            "params": (1, "A-100", "LIBRE")
-        },
-        {
-            "info": "Instalando Cama B-200",
-            "sql": "INSERT INTO camas (id_sala, numero_cama, estado) VALUES (?, ?, ?)",
-            "params": (2, "B-200", "LIBRE")
-        }
+        # 3. CAMAS
+        # Nodo 1
+        {"info": "Cama A-100 (Norte)", "sql": "INSERT INTO camas (id_sala, numero_cama, estado) VALUES (?, ?, ?)", "params": (1, "A-100", "LIBRE")},
+        {"info": "Cama A-101 (Norte)", "sql": "INSERT INTO camas (id_sala, numero_cama, estado) VALUES (?, ?, ?)", "params": (1, "A-101", "LIBRE")},
+        # Nodo 2
+        {"info": "Cama B-200 (Sur)", "sql": "INSERT INTO camas (id_sala, numero_cama, estado) VALUES (?, ?, ?)", "params": (2, "B-200", "LIBRE")},
+        {"info": "Cama B-201 (Sur)", "sql": "INSERT INTO camas (id_sala, numero_cama, estado) VALUES (?, ?, ?)", "params": (2, "B-201", "LIBRE")},
+        # Nodo 3 
+        {"info": "Cama C-300 (Este)", "sql": "INSERT INTO camas (id_sala, numero_cama, estado) VALUES (?, ?, ?)", "params": (3, "C-300", "LIBRE")},
+        {"info": "Cama C-301 (Este)", "sql": "INSERT INTO camas (id_sala, numero_cama, estado) VALUES (?, ?, ?)", "params": (3, "C-301", "LIBRE")},
+        # Nodo 4 
+        {"info": "Cama D-400 (Oeste)", "sql": "INSERT INTO camas (id_sala, numero_cama, estado) VALUES (?, ?, ?)", "params": (4, "D-400", "LIBRE")},
     ]
 
     # 3. Ejecución y Replicación

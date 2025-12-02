@@ -11,8 +11,8 @@ from app.common.protocol import send_json as protocol_send_json, recv_json
 
 #   CONFIGURACIÓN GENERAL
 REPLICATION_PORT = 9001      
-REPLICATION_TIMEOUT = 3      
-REPLICATION_RETRIES = 2     
+REPLICATION_TIMEOUT = 0.5  
+REPLICATION_RETRIES = 1 
 BUFFER_SIZE = 4096
 
 
@@ -39,7 +39,7 @@ def send_json(ip, port, data):
 
 
 #   BROADCAST DESDE EL MAESTRO
-def broadcast_to_slaves(operation_json):
+def broadcast_to_slaves(operation_json, sender_id=None):
     """
     Envía una operación SQL a todos los nodos (excepto al propio maestro idealmente).
     """
@@ -51,6 +51,8 @@ def broadcast_to_slaves(operation_json):
     results = {}
 
     for node in nodes:
+        if sender_id is not None and node['id'] == sender_id:
+            continue
         target_ip = node["host"]
         target_port = node["port_db"] 
         

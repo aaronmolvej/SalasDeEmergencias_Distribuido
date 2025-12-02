@@ -48,7 +48,7 @@ class StorageService:
             if not request:
                 return
 
-            # print(f"[Storage] Petición recibida: {request}")
+            print(f"[Storage] Petición recibida: {request}")
             response = self._process_request(request)
             send_json(client_socket, response)
             
