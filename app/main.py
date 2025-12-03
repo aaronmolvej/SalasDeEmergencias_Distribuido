@@ -113,7 +113,7 @@ def main(node_id):
         DatabaseManager(ruta_db, SCHEMA_PATH)
 
     # SERVICIO DE ALMACENAMIENTO (Siempre activo, puerto 900X)
-    servicio_storage = StorageService(ruta_db, my_node_config["port_db"], my_node_config["host"])
+    servicio_storage = StorageService(ruta_db, my_node_config["port_db"], "0.0.0.0")
     threading.Thread(target=servicio_storage.start, daemon=True).start()
     
     # SERVICIO DE ELECCIÓN (Siempre activo, puerto 910X)
