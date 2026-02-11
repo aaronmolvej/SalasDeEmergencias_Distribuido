@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 SCHEMA_PATH = "config/schema.sql"
 
 def sembrar_datos_locales(node_id):
-    # 1. Definir el nombre correcto de la BD para ESTA máquina
+    #  Definir el nombre correcto de la BD para ESTA máquina
     db_path = f"data/nodo_{node_id}.db"
     
     print(f"--- SEMBRANDO DATOS EN: {db_path} ---")
@@ -18,10 +18,8 @@ def sembrar_datos_locales(node_id):
     # Al instanciar, se crea el esquema si no existe
     db = DatabaseManager(db_path, SCHEMA_PATH) 
 
-    # 2. Datos Maestros (Idénticos para todos)
+    # Datos Maestros (Idénticos para todos)
     datos = [
-        # --- NODOS (Topología) ---
-        # Asegúrate que estas IPs sean las REALES de tu cluster_config.json
         {"sql": "INSERT OR IGNORE INTO nodos (id_sala, nombre, ip, puerto) VALUES (?, ?, ?, ?)", "params": (1, "Sala Norte", "192.168.89.131", 9001)},
         {"sql": "INSERT OR IGNORE INTO nodos (id_sala, nombre, ip, puerto) VALUES (?, ?, ?, ?)", "params": (2, "Sala Sur",   "192.168.89.132", 9001)},
         {"sql": "INSERT OR IGNORE INTO nodos (id_sala, nombre, ip, puerto) VALUES (?, ?, ?, ?)", "params": (3, "Sala Este",  "192.168.89.130", 9001)},
